@@ -1,0 +1,14 @@
+name = Persistent Login
+description = Provides a 'Remember Me' checkbox in the login form.
+core = 7.x
+
+files[] = persistent_login.install
+files[] = persistent_login.module
+files[] = persistent_login.pages.inc
+
+; Information added by drupal.org packaging script on 2011-09-18
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "persistent_login"
+datestamp = "1316348156"
+

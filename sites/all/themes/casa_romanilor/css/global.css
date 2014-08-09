@@ -1,0 +1,358 @@
+/* This file will hold the main styles for your website. */
+
+/* General */
+
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro&subset=latin,latin-ext);
+
+body  {
+  color: #000;
+  background-color:#FFFFFF;
+  margin: 0;
+  padding: 0;
+  background:#FFFFFF none repeat scroll 0 0; 
+}
+body, p, td, li, ul, ol  {
+  font-family: 'Source Sans Pro', Georgia, serif;
+  font-size: 14px;
+	line-height: 20px;
+  font-stretch: none;
+  vertical-align: baseline;
+  font-size-adjust: none;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: Helvetica, Verdana, "Trebuchet MS", Geneva, Arial, SunSans-Regular,  sans-serif;
+  margin: 0;
+}
+h1 {
+  color: #369;
+  font-size: 1.1em;
+}
+tr.odd td, tr.even td {
+  padding: 0.41em;
+}
+
+.profile h3 {
+	padding-bottom: 0.41em;
+	border-length: 75%; 
+}
+
+.profile dt {
+	padding-top: 0.41em;
+}
+
+a:link {
+  text-decoration: none;
+  color:#888888;
+}
+a:visited {
+  text-decoration: none;
+  color:#000000;
+}
+a:hover, a:active {
+  color:#000000;
+  text-decoration:underline;
+}
+fieldset {
+  border: 1px solid #ccc;
+}
+p {
+  margin: 0 0 0 0;
+  padding: 0;
+  text-align:justify;
+}
+blockquote {
+  border-left: 4px solid #69c;
+  padding: 0 15px;
+  margin: 25px 100px 25px 50px;
+  color: #696969;
+  text-align: left;
+  font-size: 1.2em;
+  line-height: 1.3em;
+  font-family: Helvetica, Verdana, "Trebuchet MS", Geneva, Arial, Helvetica, SunSans-Regular, sans-serif;
+}
+pre {
+  background-color: #eee;
+  padding: 0.75em 1.5em;
+  font-size: 1.2em;
+  border: 1px solid #ddd;
+}
+.form-item {
+  margin-top: 1em;
+  font-size: 0.9em;
+  font-family: Helvetica, Verdana, "Trebuchet MS", Geneva, Arial, Helvetica, SunSans-Regular, sans-serif;
+}
+.form-item label {
+  color: #369;
+}
+
+.form-item .description {
+	font-size: 0.87em;
+}
+
+.item-list .title {
+  color: #369;
+  font-size: 1.0em;
+}
+
+div.zone{
+	border-color: #DDDDDD;
+	border-image: none;
+	border-style: solid;
+	border-width: 0 1px 0 1px;
+}
+div.zone-inner{
+	border-color: #DDDDDD;
+	border-image: none;
+	border-style: solid;
+	border-width: 0 0 0 0;
+}
+
+div#zone-user-content{
+  border-color: #DDDDDD;
+	border-image: none;
+	border-style: solid;
+  padding-bottom: 10px;
+}
+div#zone-footer-content{
+  border-color: #DDDDDD;
+	border-image: none;
+	border-style: solid;
+	border-width: 1px;
+  min-height: 19px;
+}
+.region-menu-inner{
+  margin: 0 -10px 0 -10px;
+  height: 23px;
+  background: url('images/marginborder.png') repeat-x;
+}
+
+div.region-sidebar-first-inner{
+  border-right: 2px solid #EAEAEA;
+  margin-bottom: 18px;
+  padding: 39px 10px 0 10px;
+}
+
+h2.block-title{
+  border-bottom: 1px solid #DDDDDD;
+  color: #336699;
+  font-size: 12px;
+  //font-weight: bold;
+  padding: 5px;
+  margin-bottom: 0.25em;
+}
+
+.item-list ul li{
+  list-style: disc outside none;
+}
+
+#region-sidebar-first li{
+  font-size:1em;
+}
+
+.messages {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 0.3em;
+  margin-bottom: 1em;
+}
+.error {
+  border-color: red;
+}
+
+.content h1 {
+  color: #369;
+  font-size: 1.3em;
+}
+.content h2 {
+  color: #58b;
+  font-size: 1.25em;
+}
+.content h3 {
+  color: #69c;
+  font-size: 1.1em;
+}
+.content h4 {
+  color: #8be;
+  font-size: 1.05em;
+}
+.content h5 {
+  color: #96c6f6;
+  font-size: 1em;
+}
+.submitted {
+  color: #888888;
+  font-size: 0.85em;
+  font-style: none;
+  white-space: nowrap;
+}
+
+.node-title, .node-title a{
+  color: #336699;
+  font-family: Helvetica, sans-serif;
+}
+
+h2.node-title {
+  font-size: 1.1em;
+}
+
+#page-title{
+  display:none;
+}
+
+.node {
+  margin: 0.5em 0 0.5em;
+  border-bottom: 0.063em solid #D9D9D0;
+  padding: 0.5em 0;
+}
+
+/* Menu */
+div.region-menu-inner{
+  text-align:center;
+}
+
+#main-menu a {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: Helvetica, sans-serif;
+}
+
+#main-menu a{
+  text-decoration:none;
+  color: #000;
+}
+
+#main-menu li{
+  border-left:  1px solid #6699CC;
+}
+
+#main-menu li.first{
+  border: none;
+}
+
+.tabs {
+  margin: 15px 0;
+}
+
+.tabs ul.primary {
+  border-bottom: 2px solid #336699;
+  border-collapse: collapse;
+  height: auto;
+  line-height: normal;
+  list-style: none outside none;
+  margin: 0;
+  padding: 0 0 3px 10px;
+  white-space: nowrap;
+}
+
+.tabs ul.primary li.active a {
+    background: url("images/tabs-on.png") no-repeat scroll left top #336699;
+    border-right: 2px solid #336699;
+    color: #FFFFFF;
+}
+.tabs ul.primary li a {
+    background: url("images/tabs-off.png") no-repeat scroll left top #FFFFFF;
+    border-color: #6699CC;
+    border-style: none solid none none;
+    border-width: 2px;
+    height: auto;
+    margin-right: 10px;
+    padding: 3px 10px;
+    text-decoration: none;
+    text-transform: lowercase;
+}
+
+.tabs ul.primary li a:hover {
+  background-color: #FFFAF0;
+  color: #FF4500
+}
+ul.primary li.active a {
+  -moz-border-bottom-colors: none;
+  -moz-border-image: none;
+  -moz-border-left-colors: none;
+  -moz-border-right-colors: none;
+  -moz-border-top-colors: none;
+  background-color: #FFFFFF;
+  border-color: #BBBBBB #BBBBBB #FFFFFF;
+  border-style: solid;
+  border-width: 1px;
+}
+
+/* Search result */
+ol.search-results h3.title {
+  font-size: 1em;
+}
+
+ol.search-results h3.title a {
+  color: #336699;
+  font-weight: normal;
+}
+
+h2#search_results_title {
+  font-size: 1em;
+}
+
+/* Local.ch */
+#localBadgeV {
+  width:210px !important;
+  height:230px !important; 
+  overflow:hidden !important;
+  border:1px solid #b3b3b3; 
+  font-size:11px;
+  color:#666666;
+  font-family: Arial, Verdana, Sans-Serif;
+}
+#localBadgeV input,
+#localBadgeV label,
+#localBadgeV div {
+  padding: 0 !important; 
+  margin: 0 !important;
+}
+#localBadgeV label {
+  color: #000000; 
+  font-weight: bold;
+}
+
+#localBadgeV #localBadgeVHeader {
+  padding: 5px 0px 5px 15px !important; 
+  border-bottom:2px solid #C02D1A;
+}
+#localBadgeV #localSearchWhatWrapper {
+  margin: 0px 0px 5px 15px !important; 
+  padding-top:10px !important;
+}
+#localBadgeV #localSearchWhereWrapper, #localBadgeV  #localSearchSubmitWrapper {
+  margin: 0px 0px 10px 15px ! important;
+}
+#localBadgeV #localSearchWhatWrapper label, #localBadgeV #localSearchWhereWrapper label {
+  font-weight:bold;
+  margin-right:5px !important;
+}
+#localBadgeV #localSearchWhatWrapper input, #localBadgeV #localSearchWhereWrapper input {
+  margin-top:2px !important;
+  width:165px;
+  border:1px inset black;
+}
+
+#localBadgeV #localSearchSubmitWrapper input {
+  height: 23px;
+  color: #000000;
+}
+#localBadgeV #localBadgeVContent {
+  background-image:url("http://staticlocal.ch/images/topnav_bg.png"); background-repeat:repeat-x;
+}
+
+.block-archive caption {
+  font-size: 1em;
+  font-weight: normal;
+}
+
+body.page-node .pane-node-field-imagine {
+  width: auto;
+  float: left;
+  margin-right: 20px;
+}
+
+.panel-pane.authored_on {
+  float: left;
+  margin-right: 20px;
+}

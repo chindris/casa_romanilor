@@ -1,0 +1,30 @@
+.pbgr {  background-attachment: scroll; background-image: url(img/pbgr.jpg); background-repeat: no-repeat; background-position: left top}
+.verdanaRed16 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 16px; font-weight: normal; color: #990033}
+.verdanaRed16Bold {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #990033}
+.verdanaRed15 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 15px; font-weight: normal; color: #990033}
+.verdanaRed15Bold {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #990033}
+.verdanaRed14 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; color: #990033}
+.verdanaRed14Bold {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #990033}
+.verdanaRed13 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; color: #990033}
+.verdanaRed13Bold {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #990033}
+.verdanaRed12 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; color: #990033}
+.verdanaRed12Bold {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #990033}
+.verdanaBlue12Bold { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #000E62}
+.verdanaRed11 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px; font-weight: normal; color: #990033 }
+.verdanaBlue11Bold { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #000E62 }
+.verdanaRed11Bold { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #990033 }
+.verdanaRed08 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8px; font-weight: normal; color: #990033 }
+.verdanaRed09 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 9px; font-weight: normal; color: #990033 }
+.verdanaRed10 { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #990033 }
+.egbookIconsList{border:1px solid silver; vertical-align:top; padding:0.3em; font-size:0.9em;}
+.EmRed{font-weight:bold; color:red;}
+.egbookTable{border:1px solid silver;}
+.formItem {
+	border:1px inset #000000; font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size:9px;
+	font-style: normal;
+	font-weight: normal;
+	color: #990033;
+	text-decoration: none;
+	background-image: url('../spacer.gif');
+}

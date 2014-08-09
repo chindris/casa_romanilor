@@ -1,0 +1,712 @@
+<?php
+
+define('CUSTOM_IMPORT_USER_BATCH_LIMIT', 20);
+define('CUSTOM_IMPORT_NODES_BATCH_LIMIT', 20);
+
+/**
+ * @file
+ * A module to perform custom migration from one version of Drupal to another.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function custom_import_menu() {
+  $items = array();
+
+  $items['admin/content/custom-import'] = array(
+    'title' => 'Custom import',
+    'description' => 'Run custom import routines to migrate from one Drupal version to another.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('custom_import_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/content/change-author'] = array(
+    'title' => 'Change author',
+    'description' => 'Change the author of content (nodes, comments).',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('custom_change_author_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+function custom_change_author_form() {
+  $form['source_uid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Source id'),
+    '#description' => t('The id of the source user'),
+    '#required' => TRUE,
+  );
+  $form['dest_uid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Destination id'),
+    '#description' => t('The id of the destination user'),
+    '#required' => TRUE,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+function custom_change_author_form_submit(&$form, &$form_state) {
+  db_update('comment')->fields(array('uid' => $form_state['values']['dest_uid']))->condition('uid', $form_state['values']['source_uid'])->execute();
+  db_update('node')->fields(array('uid' => $form_state['values']['dest_uid']))->condition('uid', $form_state['values']['source_uid'])->execute();
+  db_update('node_revision')->fields(array('uid' => $form_state['values']['dest_uid']))->condition('uid', $form_state['values']['source_uid'])->execute();
+}
+
+function custom_import_form() {
+  drupal_set_message('Are you sure you want to run the custom import script?  No going back without re-installing the database!!!', 'warning');
+  $operations = array(
+    'custom_import_batch_delete_files' => 'Delete Files',
+    'custom_import_batch_files' => 'Files (run the delete files first, then copy the files in the new location)',
+    'custom_import_batch_vocabularies' => 'Vocabularies',
+    'custom_import_batch_terms' => 'Terms',
+    'custom_import_batch_fields' => 'Fields (do not update if they exist already)',
+    'custom_import_batch_users' => 'Users',
+    'custom_import_batch_roles' => 'Roles (do not update if the exist already)',
+    'custom_import_batch_nodes' => 'Nodes',
+    'custom_import_batch_comments' => 'Comments',
+    'custom_import_batch_aliases' => 'Aliases',
+    'custom_import_batch_webform_submissions' => 'Webform subsmissions',
+    'custom_import_batch_webform_access' => 'Webform Submit access',
+  );
+  $form['import'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('What to import'),
+    '#options' => $operations,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Start import'),
+  );
+  return $form;
+}
+
+function custom_import_form_submit($form, &$form_state) {
+  $batch = array(
+    'title' => t('Importing data'),
+    'operations' => custom_import_batch_operations($form_state['values']['import']),
+    'finished' => 'custom_import_batch_finished',
+  );
+
+  batch_set($batch);
+}
+
+function custom_import_batch_operations($what_to_import) {
+  $operations = array();
+  foreach ($what_to_import as $key => $value) {
+    if ($key === $value) {
+      $operations[] = array($key, array());
+    }
+  }
+  // Next: import permissions if possible (maybe manually is easier).
+  // import the main menu.
+
+  return $operations;
+}
+
+function custom_import_batch_finished($success, $results, $operations) {
+  if ($success) {
+    $message = t('Import finished successfully.');
+  }
+  else {
+    $message = t('Finished with an error.');
+  }
+  drupal_set_message($message);
+}
+
+/**
+ * Deletes all the current files, prior to import them.
+ */
+function custom_import_batch_delete_files() {
+  $query = db_select('file_managed', 'files')->fields('files', array('fid'));
+  $files = $query->execute()->fetchAll();
+  foreach ($files as $file) {
+    $object = file_load($file->fid);
+    file_delete($object, TRUE);
+  }
+}
+
+function custom_import_batch_files(&$context) {
+  require_once './includes/file.mimetypes.inc';
+  db_set_active('legacy');// Switch databases.
+  $configs = custom_import_get_configs();
+
+  $query = db_select('files', 'f');
+  $query->fields('f');
+  $query->orderBy('f.fid', 'asc');
+  $result = $query->execute();
+
+  foreach ($result as $row) {
+    // Check first if there is already a file with the same uri.
+    $new_uri = 'public://' . str_replace('files/', '', $row->filepath);
+    db_set_active('default');
+    $uri_exists = db_select('file_managed', 'f')
+            ->fields('f', array('fid'))
+            ->condition('f.uri', db_like($new_uri), 'LIKE')
+            ->execute()->fetch();
+    db_set_active('legacy');
+    if ($uri_exists) {
+      // @todo: store this id in some global variable and make the assignments
+      // at the end.
+      continue;
+    }
+    $file = (object) array(
+      'fid' => $row->fid,
+      'uid' => 1,
+      'filename' => $row->filename,
+      'uri' => $new_uri,
+      'filemime' => $row->filemime,
+      'filesize' => $row->filesize,
+      'status' => 1,
+      'timestamp' => REQUEST_TIME,
+    );
+
+    db_set_active('default');
+    drupal_write_record('file_managed', $file);
+
+    $context['message'] = t('Importing file @name', array('@name' => $file->filename));
+  }
+
+  // Import the user pictures.
+  db_set_active('legacy');
+  $query = db_select('users', 'u');
+  $query->fields('u', array('picture', 'uid'));
+  $query->condition('u.picture', '', '<>');
+  $result = $query->execute();
+  foreach ($result as $row) {
+    // Check first if there is already a file with the same uri.
+    $new_uri = 'public://' . str_replace('files/', '', $row->picture);
+    db_set_active('default');
+    $uri_exists = db_select('file_managed', 'f')
+            ->fields('f', array('fid'))
+            ->condition('f.uri', db_like($new_uri), 'LIKE')
+            ->execute()->fetch();
+    db_set_active('legacy');
+    if ($uri_exists) {
+      // In this case, we do nothing, when saving the new users the fid wil be
+      // get after a search for the uri.
+      continue;
+    }
+
+    $file = (object) array(
+      'uid' => $row->uid,
+      'filename' => 'picture-' . $row->uid,
+      'uri' => $new_uri,
+      'filemime' => file_get_mimetype($row->picture, file_mimetype_mapping()),
+      'filesize' => filesize($configs['global']['old_root_path'] . '/' . $row->picture),
+      'status' => 1,
+      'timestamp' => REQUEST_TIME,
+    );
+    db_set_active('default');
+    drupal_write_record('file_managed', $file);
+
+    $context['message'] = t('Importing file @name', array('@name' => $file->filename));
+  }
+
+  db_set_active('default'); // Switch back.
+}
+
+/**
+ * Imports the vocabularies.
+ */
+function custom_import_batch_vocabularies(&$context) {
+  db_set_active('legacy'); // Switch databases.
+  $result = db_select('vocabulary', 'v')
+          ->fields('v')
+          ->execute();
+  foreach ($result as $row) {
+    $voc = new stdClass();
+    $voc->vid = $row->vid;
+    $voc->name = $row->name;
+    $voc->machine_name = drupal_strtolower(str_replace(array('â', 'ş', 'ţ', 'î', 'ă', ' '), array('a', 's', 't', 'i', 'a', '_'), $row->name));
+    $voc->description = $row->description;
+    $voc->hierarchy = $row->hierarchy;
+    $voc->module = $row->module;
+    $voc->weight = $row->weight;
+    db_set_active('default');
+    // Check if there is already a vocabulary with this name.
+    $exists = taxonomy_vocabulary_load($row->vid);
+    if (!empty($exists)) {
+      taxonomy_vocabulary_save($voc);
+    }
+    else {
+      drupal_write_record('taxonomy_vocabulary', $voc);
+      taxonomy_vocabulary_save($voc);
+    }
+  }
+  db_set_active('default'); // Switch back.
+}
+
+/**
+ * Imports the terms.
+ */
+function custom_import_batch_terms(&$context) {
+  db_set_active('legacy'); // Switch databases.
+
+  $query = db_select('term_data', 'td');
+  $query->innerJoin('term_hierarchy', 'th', 'td.tid = th.tid');
+  $query->fields('td');
+  $query->fields('th', array('parent'));
+  $query->orderBy('th.parent', 'ASC');
+  $query->orderBy('td.tid', 'ASC');
+  $result = $query->execute();
+  foreach ($result as $row) {
+    $term = new stdClass();
+    $term->tid = $row->tid;
+    $term->vid = $row->vid;
+    $term->name = $row->name;
+    $term->description = $row->description;
+    $term->format = 'filtered_html';
+    $term->weight = $row->weight;
+    $term->parent = $row->parent;
+    db_set_active('default');
+    $exists = taxonomy_term_load($term->tid);
+    if (!empty($exists)) {
+      taxonomy_term_save($term);
+    }
+    else {
+      drupal_write_record('taxonomy_term_data', $term);
+      taxonomy_term_save($term);
+    }
+  }
+  db_set_active('default'); // Switch back.
+}
+
+/**
+ * Imports the users.
+ */
+function custom_import_batch_users(&$context) {
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+  db_set_active('legacy'); // Switch databases.
+  $configs = custom_import_get_configs();
+  // Build the total import count.
+  if (empty($context['sandbox'])) {
+    $query = db_select('users');
+    $query->addExpression('COUNT(uid)', 'count');
+    $query->condition('uid', '1', '>');
+    $max = $query->execute()->fetchField();
+
+    $context['sandbox'] = array(
+      'progress' => 0,
+      'current_user' => 0,
+      'max' => $max,
+    );
+  }
+  $query = db_select('users', 'u');
+  $query->orderBy('u.uid', 'asc');
+  $query->fields('u');
+  $query->condition('u.uid', $context['sandbox']['current_user'], '>');
+  $query->condition('u.uid', 1, '>');
+  $query->range(0, CUSTOM_IMPORT_USER_BATCH_LIMIT);
+  $result = $query->execute();
+  $users = array();
+  foreach ($result as $row) {
+    $new_hash = 'U' . user_hash_password($row->pass, 11);
+    $users[$row->uid]['original'] = $row;
+    $users[$row->uid]['new'] = array(
+      'uid' => $row->uid,
+      'name' => $row->name,
+      'pass' => $new_hash,
+      'mail' => $row->mail,
+      'theme' => '', // if needed, $row->theme can be used.
+      'signature' => $row->signature,
+      'signature_format' => 'filtered_html',
+      'created' => $row->created,
+      'access' => $row->access,
+      'login' => $row->login,
+      'status' => $row->status,
+      'timezone' => NULL, // @todo: To implement if needed.
+      'language' => $row->language,
+      'picture' => '', // Will be filled in later.
+      'init' => $row->init,
+      'data' => $row->data,
+    );
+    // Add the profile fields.
+    foreach ($configs['user']['profile_fields'] as $fid => $field_name) {
+      $field_values = db_select('profile_values', 'pv')
+                    ->fields('pv', array('value'))
+                    ->condition('pv.uid', $row->uid)
+                    ->condition('pv.fid', $fid)
+                    ->execute();
+      foreach ($field_values as $field_value) {
+        // For the moment, only the LANGUAGE_NONE is used.
+        if ($field_name == 'field_profile_implicare') {
+          $field_value->value = (int) $field_value->value;
+        }
+        $users[$row->uid]['new'][$field_name][LANGUAGE_NONE][] = array('value' => $field_value->value);
+      }
+    }
+  }
+  // Time to actually save the new users.
+  db_set_active('default');
+  foreach ($users as  &$account) {
+    if ($account['original']->picture != '') {
+      // We have to populate the picture with the fid.
+      $picture_fid = db_select('file_managed', 'f')
+                   ->fields('f', array('fid'))
+                   ->condition('f.uri', db_like('public://' . str_replace('files/', '', $account['original']->picture)), 'LIKE')
+                   ->execute()->fetchField();
+      if ($picture_fid) {
+        $account['new']['picture'] = $picture_fid;
+      }
+    }
+    $account_object = (object)$account['new'];
+    $account_object->data = unserialize($account_object->data);
+    $account['new']['data'] = unserialize($account['new']['data']);
+    $account_object->roles = array(); // Will be imported later.
+
+    // If the user exists, the call the drupal_write_record differently, with
+    // the primary key.
+    $existing_user = user_load($account_object->uid);
+    if (!empty($existing_user)) {
+      drupal_write_record('users', $account_object, array('uid'));
+    }
+    else {
+      // Write first the user into the database, and then call the user_save()
+      // function to populate the fields.
+      drupal_write_record('users', $account_object);
+    }
+    // Do no save the password again.
+    unset($account['new']['pass']);
+    // Special handling for the picture field.
+    if ($account['new']['picture']) {
+      $account_object->picture = new stdClass();
+      $account_object->picture->status = 1;
+      $account_object->picture->fid = $account['new']['picture'];
+      unset($account['new']['picture']);
+    }
+    user_save($account_object, $account['new']);
+    // Update the sandbox.
+    $context['sandbox']['progress']++;
+    $context['message'] = t('Imported user @username (@count of @max)',
+                            array('@username' => $account_object->name, '@count' => $context['sandbox']['progress'], '@max'=>$context['sandbox']['max']));
+    $context['sandbox']['current_user'] = $account_object->uid;
+  }
+  $context['finished'] = min($context['sandbox']['progress'] / $context['sandbox']['max'], 1);
+}
+
+/**
+ * Imports the roles.
+ */
+function custom_import_batch_roles(&$context) {
+  db_set_active('legacy'); // Switch databases.
+  $context['message'] = t('Importing roles.');
+  $query = db_select('role', 'r');
+  $query->leftJoin('role_weights', 'rw', 'rw.rid = r.rid');
+  $query->fields('r', array('rid', 'name'));
+  $query->fields('rw', array('weight'));
+  // Do not import the anonymous and authenticated user roles.
+  $query->condition('r.rid', 2, '>');
+  $result = $query->execute();
+  db_set_active('default');
+  foreach ($result as $row) {
+    $role = new stdClass();
+    $role->rid = $row->rid;
+    $role->name = $row->name;
+    $role->weight = $row->weight;
+    drupal_write_record('role', $role);
+  }
+  // Assign the roles to the users.
+  db_set_active('legacy');
+  $result  = db_select('users_roles', 'ur')
+            ->fields('ur')
+            ->execute();
+  db_set_active('default');
+  foreach ($result as $row) {
+    $role_user = new stdClass();
+    $role_user->rid = $row->rid;
+    $role_user->uid = $row->uid;
+    drupal_write_record('users_roles', $role_user);
+  }
+}
+
+
+/**
+ * Import the fields definition.
+ */
+function custom_import_batch_fields(&$context) {
+  if (module_exists('bundle_copy')) {
+    module_load_include('inc', 'custom_import', 'custom_import.fields');
+    foreach (custom_import_get_fields() as $key => $value) {
+      $context['message'] = t('Importing content type @type.', array('@type' => $key));
+      $form_state = array('values' => array('macro' => $value, 'entity_type' => 'node'));
+      drupal_form_submit('bundle_copy_import', $form_state);
+    }
+  }
+  else {
+    drupal_set_message('The bundle copy module does not exist, so the content type were not imported.', 'error');
+  }
+}
+
+function custom_import_batch_nodes(&$context) {
+  $configs = custom_import_get_configs();
+  // Build the total import count.
+  if (empty($context['sandbox'])) {
+    $content = file_get_contents($configs['global']['old_url'].'/node/export/total_number');
+    $context['sandbox'] = array(
+      'progress' => 0,
+      'current_node' => 0,
+      'max' => (int)$content,
+    );
+  }
+
+  $result = (array)json_decode(file_get_contents($configs['global']['old_url'].'/node/export/get_nodes/'  . $context['sandbox']['current_node'] . '/' . CUSTOM_IMPORT_NODES_BATCH_LIMIT), TRUE);
+
+  foreach ($result as $row) {
+    $node = (object) $row;
+    $node->type = isset($configs['node']['content_types_mapping'][$node->type]) ? $configs['node']['content_types_mapping'][$node->type] : $node->type;
+    $node->language = LANGUAGE_NONE;
+
+    // To maintain the same NID, use drupal_write_record() first, then save.
+    $existing_node = node_load($node->nid);
+    if (!empty($existing_node)) {
+      //node_delete($existing_node->nid);
+      $node->vid = $existing_node->vid;
+    }
+    else {
+      drupal_write_record('node', $node);
+      drupal_write_record('node_revision', $node);
+    }
+    // It can happen that we have the same nid, but a different type, so in this
+    // case just print a message.
+    if (empty($existing_node) || $existing_node->type == $node->type) {
+      // Add the rest of the fields.
+      $node->body = array(LANGUAGE_NONE => array(array('value' => $node->body, 'summary' => $node->teaser, 'format' => 'full_html')));
+      foreach ($configs['node']['fields_mapping'][$node->type] as $key => $value) {
+        if ($value == 'field_imagine') {
+          if (empty ($node->{$key}) || empty($node->{$key}[0]) || empty($node->{$key}[0]['fid'])) {
+            unset ($node->{$key});
+          }
+        }
+        $node->{$value} = array(LANGUAGE_NONE => $node->{$key});
+      }
+      $node->path = array('alias' => $node->path);
+      // Add the taxonomies.
+      foreach ($node->taxonomy as $tid => $term) {
+        $field_name = isset($configs['node']['taxonomies'][$node->type][$term['vid']])?isset($configs['node']['taxonomies'][$node->type][$term['vid']]):$configs['node']['taxonomies'][$term['vid']];
+        $node->{$field_name}[LANGUAGE_NONE][] = array('tid' => $tid);
+      }
+      // Some special update for polls.
+      if ($node->type == 'poll') {
+        foreach ($node->choice as $key => $value) {
+          $node->choice[$key]['weight'] = $node->choice[$key]['chorder'];
+          unset($node->choice[$key]['chorder']);
+        }
+      }
+      // If the node is a webform, then delete the components first. They will
+      // be created again.
+      if ($node->type == 'webform' && !empty($existing_node)) {
+        webform_node_delete($existing_node);
+      }
+
+      if (empty($existing_node)) {
+        node_invoke($node, 'insert');
+        module_invoke_all('node_insert', $node);
+      }
+
+      // Avoid duplication of poll choices.
+      if ($node->type == 'poll') {
+        unset($node->choice);
+      }
+
+      $last_updated = $node->changed;
+      // And, save the node...
+      node_save($node);
+      // Also, keep the changed timestamp, the node_save() will update it to the
+      // current timestmap.
+      db_update('node')->fields(array('changed' => $last_updated))->condition('nid', $node->nid)->execute();
+    }
+    else {
+      // If we are here, then there is another node with the same id but a
+      // different type.
+      drupal_set_message(t('The node with id %node_id exists in the current system and is of different type than the one from the old system. Current type: %current_type. Old system type: %old_type',
+                          array('%node_id' => $node->nid, '%current_type' => $existing_node->type, '%old_type' => $node->type)));
+    }
+
+    $context['message'] = t('Importing node @title (@count of @total_number)', array('@title' => $node->title, '@count' => $context['sandbox']['progress'], '@total_number' => $context['sandbox']['max']));
+    $context['sandbox']['current_node'] = $node->nid;
+    $context['sandbox']['progress']++;
+  }
+  $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+}
+
+function custom_import_batch_comments(&$context) {
+  $previous_db = db_set_active('legacy'); // Switch databases.
+
+  // Build the total import count.
+  if (empty($context['sandbox'])) {
+    $query = db_select('comments');
+    $query->addExpression('COUNT(cid)', 'count');
+    $max = $query->execute()->fetchField();
+
+    $context['sandbox'] = array(
+      'progress' => 0,
+      'current_comment' => 0,
+      'max' => $max,
+    );
+  }
+
+  $query = db_select('comments', 'c');
+  $query->fields('c');
+  $query->orderBy('c.cid', 'asc');
+  $query->condition('cid', $context['sandbox']['current_comment'], '>');
+  $result = $query->execute();
+
+  db_set_active('default');
+  foreach ($result as $row) {
+    $comment = (object) $row;
+    $comment->language = LANGUAGE_NONE;
+    $comment->status = (int) !$row->status; // Flipped between D6 and D7.
+    $comment->created = $row->timestamp;
+    $comment->changed = $row->timestamp;
+    $comment->comment_body[LANGUAGE_NONE][0] = array('value' => $row->comment, 'format' => 'filtered_html');
+
+    // To maintain the same CID, use drupal_write_record() first, then save.
+    $existing = comment_load($comment->cid);
+    if (!$existing) {
+      drupal_write_record('comment', $comment);
+    }
+    comment_save($comment);
+
+    $context['message'] = t('Importing comment @subject', array('@subject' => $comment->subject));
+    $context['sandbox']['current_comment'] = $row->cid;
+    $context['sandbox']['progress']++;
+  }
+
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+}
+
+/**
+ * Imports the aliases.
+ */
+function custom_import_batch_aliases(&$context) {
+  $context['message'] = t('Importing URL aliases.');
+  db_set_active('legacy'); // Switch databases.
+  $query = db_select('url_alias', 'ua');
+  $query->fields('ua', array('src', 'dst'));
+  $result = $query->execute();
+  db_set_active('default');
+  foreach ($result as $row) {
+    // Check if we already have an alias, and if yes, just skip it.
+    $existing = db_select('url_alias', 'ua')
+                ->fields('ua')
+                ->condition('ua.source', $row->src)
+                ->condition('ua.alias', $row->dst)
+                ->execute()->fetch();
+    if ($existing) {
+      continue;
+      //$existing->alias = $row->dst;
+      //drupal_write_record('url_alias', $existing, array('pid'));
+    }
+    else {
+      $alias = new stdClass();
+      $alias->source = $row->src;
+      $alias->alias = $row->dst;
+      $alias->language = LANGUAGE_NONE;
+      drupal_write_record('url_alias', $alias);
+    }
+  }
+}
+
+function custom_import_batch_webform_submissions() {
+  $context['message'] = t('Importing webform submissions.');
+  db_set_active('legacy'); // Switch databases.
+  // Import first the submissions.
+  $query = db_select('webform_submissions', 'ws')->fields('ws', array());
+  $result = $query->execute();
+  db_set_active('default');
+  // Delete all the current submissions.
+  db_delete('webform_submissions')->execute();
+  foreach ($result as $row) {
+    $row->is_draft = 0;
+    drupal_write_record('webform_submissions', $row);
+  }
+
+  // Second, import the submissions data.
+  db_set_active('legacy');
+  $query = db_select('webform_submitted_data', 'wsd')->fields('wsd', array());
+  $result = $query->execute();
+  db_set_active('default');
+  // Delete all the data already submitted.
+  db_delete('webform_submitted_data')->execute();
+  foreach ($result as $row) {
+    drupal_write_record('webform_submitted_data', $row);
+  }
+}
+
+function custom_import_batch_webform_access() {
+  // Make sure that all the webforms are accesible to anonymous and
+  // authenticated users.
+  $query = db_select('webform', 'webform')->fields('webform', array('nid'));
+  $result = $query->execute()->fetchAll();
+  foreach ($result as $data) {
+    db_delete('webform_roles')->condition('nid', $data->nid)->condition('rid', array(1, 2))->execute();
+    db_insert('webform_roles')->fields(array('nid' => $data->nid, 'rid' => 1))->execute();
+    db_insert('webform_roles')->fields(array('nid' => $data->nid, 'rid' => 2))->execute();
+  }
+}
+
+function custom_import_get_configs() {
+  $configs['user'] = array(
+    'profile_fields' => array(
+      1 => 'field_profile_site',
+      3 => 'field_locality',
+      5 => 'field_profile_implicare',
+    ),
+  );
+  $configs['global'] = array(
+    'old_url' => variable_get('site_old_url', 'http://casa-romanilor.ch'),
+    'old_root_path' => variable_get('site_old_root_path', str_replace('/new_version', '', $_SERVER['DOCUMENT_ROOT'])),
+  );
+  $configs['node'] = array(
+    'content_types_mapping' => array(
+      'story' => 'article',
+    ),
+    'fields_mapping' => array(
+      'article' => array(
+        'field_arhivat' => 'field_arhivat',
+        'field_imagine_0' => 'field_imagine'
+      ),
+      'blog' => array(
+        'field_imagine_0' => 'field_imagine'
+      ),
+      'page' => array(
+        'field_imagine' => 'field_imagine'
+      ),
+      'semnatura' => array(
+        'field_nume' => 'field_nume',
+        'field_e_mail' => 'field_email',
+        'field_localitate' => 'field_locality',
+        'field_link' => 'field_link',
+      ),
+      'webform' => array(
+        'field_arhivat' => 'field_arhivat',
+        'field_imagine_0' => 'field_imagine'
+      ),
+      // @todo: map the rest of the fields.
+    ),
+    'taxonomies' => array(
+      9 => 'field_art_gen_category',
+      15 => 'field_biserici_rom_category',
+      17 => 'field_blog_category',
+      7 => 'field_cultural_category',
+      13 => 'field_despre_site_category',
+      14 => 'field_elvetia_category',
+      11 => 'field_editare_category',
+      6 => 'field_even_rom_category',
+      16 => 'field_mat_arh_category',
+      12 => 'field_simplenews_term',
+      8 => 'field_org_rom_category',
+      18 => 'field_sugestii_category'
+    ),
+  );
+  return $configs;
+}

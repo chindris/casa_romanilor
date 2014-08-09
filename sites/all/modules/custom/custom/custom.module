@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ *  Different customizations.
+ */
+
+function custom_form_contact_site_form_alter(&$form, &$form_state, $form_id) {
+  // Try to put get the category from the URL if possible.
+  if (arg(1) != '') {
+    $contact_category = custom_contact_load_by_category_name(arg(1));
+    if (!empty($contact_category)) {
+      $form['cid'] = array(
+        '#type' => 'value',
+        '#value' => $contact_category->cid,
+      );
+    }
+  }
+}
+
+/**
+ * Loads a contact category by name.
+ *
+ * @param string $category_name
+ *  The category name to search for.
+ *
+ * @return object
+ *  An object that maps over the 'contact' table, or FALSE if the category is
+ *  not found.
+ */
+function custom_contact_load_by_category_name($category_name) {
+  $query = db_select('contact', 'c')->fields('c')->condition('c.category', $category_name);
+  return $query->execute()->fetch();
+}
