@@ -1,0 +1,19 @@
+# Ignore configuration files that may contain sensitive information.
+sites/*/settings*.php
+
+# Ignore paths that contain user-generated content.
+sites/*/files
+sites/*/private
+Gemfile.lock
+
+glip
+*.scssc
+
+# Ignore FirePHPCore library
+sites/*/libraries/FirePHPCore*
+
+# And some other special folders and files
+.DS_Store
+.buildpath
+.project
+.settings*
