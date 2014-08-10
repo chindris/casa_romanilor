@@ -18,3 +18,4 @@ sites/*/libraries/FirePHPCore*
 .buildpath
 .project
 .settings*
+.htaccess
