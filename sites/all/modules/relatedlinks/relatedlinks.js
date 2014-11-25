@@ -49,7 +49,7 @@ Drupal.behaviors.relatedlinks = {
   // -1 signifies that no link is being edited at the moment.
   var current = -1;
 
-  var l = $('<a id="relatedlinks-add" href="#">' + Drupal.t('Add / Update') + '</a>')
+  $('<a id="relatedlinks-add" href="#">' + Drupal.t('Add / Update') + '</a>')
     .appendTo(fields)
     .click(function() {
       url = $('#field-relatedlinks-url', fields).val();
@@ -68,7 +68,7 @@ Drupal.behaviors.relatedlinks = {
     }
   );
 
-  var l = $('<a id="relatedlinks-clear" href="#">' + Drupal.t('Clear') + '</a>')
+  $('<a id="relatedlinks-clear" href="#">' + Drupal.t('Clear') + '</a>')
     .appendTo(fields)
     .click(function() {
       current = -1;
@@ -209,7 +209,7 @@ Drupal.behaviors.relatedlinks = {
       $('#field-relatedlinks-url').val('node/' + $(node).data('autocompleteValue'));
       // Title field is set in .hidePopup().
     }
-  }
+  };
 
   /**
    * Hides the autocomplete suggestions.
@@ -233,7 +233,7 @@ Drupal.behaviors.relatedlinks = {
       $(popup).fadeOut('fast', function() { $(popup).remove(); });
     }
     this.selected = false;
-  }
+  };
 }
 };
 }(jQuery));

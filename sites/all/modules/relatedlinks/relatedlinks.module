@@ -96,12 +96,8 @@ function relatedlinks_menu() {
  */
 function relatedlinks_permission() {
   return array(
-    'administer related links' => array(
-      'title' => t('Administer related links'),
-    ),
-    'add related links' => array(
-      'title' => t('Add related links'),
-    ),
+    'administer related links' => array('title' => t('Administer related links')),
+    'add related links' => array('title' => t('Add related links'))
   );
 }
 
@@ -135,6 +131,7 @@ function relatedlinks_block_info() {
     if ($config['enabled'] && ($config['block'] || $top)) {
       $top = FALSE;
       $blocks[$type]['info'] = t('Related links:') . ' ' . check_plain($config['name']);
+      $blocks[$type]['cache'] = DRUPAL_NO_CACHE;
     }
   }
 
@@ -648,7 +645,7 @@ function _relatedlinks_update_discovered_links($node) {
   $tracker = _relatedlinks_get_tracker($node->nid);
 
   if (!$tracker || ($tracker && !$tracker->updated)) {
-    $links = _relatedlinks_get_discovered_links($node, $tracker->keywords);
+    $links = _relatedlinks_get_discovered_links($node, $tracker);
 
     _relatedlinks_add_links($node->nid, $links, RELATEDLINKS_DISCOVERED);
     if (!$tracker) {
@@ -776,10 +773,11 @@ function _relatedlinks_check_links($url_matches, $title_matches) {
  *
  * @param $node
  *   The node whose discovered links are to be calculated.
- * @param $keywords
- *   The search module keywords associated with the node.
+ * @param $tracker
+ *   The tracker record associated with the node in the tracker table.
  */
-function _relatedlinks_get_discovered_links($node, $keywords) {
+function _relatedlinks_get_discovered_links($node, $tracker) {
+  $keywords = $tracker ? $tracker->keywords : NULL;
   $discovered = variable_get('relatedlinks_discovered', _relatedlinks_get_discovered_defaults());
   $max = _relatedlinks_get_type_property(RELATEDLINKS_DISCOVERED, 'max');
   $node_types = isset($discovered['node_types']) ? $discovered['node_types'] : array();

@@ -120,6 +120,20 @@ function relatedlinks_requirements() {
 }
 
 /**
+ * The relatedlinks blocks should not be cached. Equivalent of
+ * relatedlinks_update_6000() which has not been ported. It does not matter if
+ * this update runs more than once.
+ *
+ * @see http://drupal.org/node/1155634
+ */
+function relatedlinks_update_7000() {
+  db_update('block')
+    ->fields(array('cache' => DRUPAL_NO_CACHE))
+    ->condition('module', 'relatedlinks')
+    ->execute();
+}
+
+/**
  * Implements hook_uninstall().
  */
 function relatedlinks_uninstall() {

@@ -93,7 +93,7 @@ function persistent_login_menu() {
  * Implements hook_menu_alter().
  */
 function persistent_login_menu_alter(&$items) {
-  $items['user/register']['access callback'] = 'persistent_login_user_reauth_access';
+  $items['user/register']['access callback'] = 'persistent_login_user_register_access';
 }
 
 /**
@@ -568,9 +568,23 @@ function _persistent_login_invalidate($why, $where, $args) {
 }
 
 /**
-* Disable 'Create Account' link if a user is logged in via PL and trying to
-* access a PL restricted page.
-*/
-function persistent_login_user_reauth_access() {
-return user_is_anonymous() && empty($_SESSION['persistent_login_reauth']);
+ * Return the warning message to be displayed via hook_requirements() or on the
+ * Persistent Login settings page as a message.
+ */
+function _persistent_login_get_config_warning_msg() {
+  return t(
+    'Your site\'s <em>session.cookie_lifetime</em> PHP setting is %life.  When using Persistent Login, it should be 0 so that PHP sessions end when the user closes his/her browser.  You can change this setting by editing <strong>%file</strong>.',
+    array(
+      '%life' => ini_get('session.cookie_lifetime'),
+      '%file' => conf_path() . '/settings.php',
+    )
+  );
+}
+
+/**
+ * Disable 'Create Account' link if a user is logged in via PL and trying to
+ * access a PL restricted page.
+ */
+function persistent_login_user_register_access() {
+  return user_register_access() && empty($_SESSION['persistent_login_reauth']);
 }

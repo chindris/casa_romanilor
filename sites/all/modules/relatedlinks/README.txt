@@ -20,9 +20,9 @@ Installation
 install the relatedlinks database table.
 3) The discovered links feature requires either the taxonomy or search modules
 to be enabled.
-4) Go to admin/config/search/relatedlinks/configure to configure which content types may have
-related links, and other options. The discovered links tab provides
-configuration options for the discovered links feature.
+4) Go to admin/config/search/relatedlinks/configure to configure which content
+types may have related links, and other options. The discovered links tab
+provides configuration options for the discovered links feature.
 5) Go to admin/structure/block to enable the appropriate blocks for your site.
 
 Upgrade

@@ -241,7 +241,7 @@ function theme_archive_page_title($variables) {
   }
 
   if ($variables['type'] != 'all') {
-    $type_name = db_query("SELECT name FROM {node_type} WHERE type = '%s'", $variables['type'])->fetchField();
+    $type_name = db_query("SELECT name FROM {node_type} WHERE type = '%s'", array($variables['type']))->fetchField();
 
     $title .= ' - '. ($type_name ? t($type_name) : $variables['type']);
   }

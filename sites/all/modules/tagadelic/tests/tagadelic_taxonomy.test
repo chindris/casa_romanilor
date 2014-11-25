@@ -4,6 +4,8 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
   protected $tags  = array();
   protected $nodes = array();
 
+  protected $admin_user;
+
   /**
    * getInfo sets information about this test
    *
@@ -23,13 +25,28 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
    * @returns Type  Description of return value
    */
   public function setUp() {
-    parent::setUp(array('tagadelic_taxonomy'));
+    parent::setUp(array('tagadelic_taxonomy', 'block'));
+
+    // Create an admin user allowed to edit block settings
+    $this->admin_user = $this->drupalCreateUser(array(
+      'administer blocks',
+      'access administration pages',
+    ));
+
   }
 
   public function testHasTagcloudPage() {
     $this->drupalGet("tagadelic_taxonomy");
     $this->assertResponse(200, "Can Access Page");
     $this->assertText(t("Tag Cloud"), "Title of page is Tag Cloud");
+  }
+
+  public function testOnlyAccessContentAccessible() {
+    # Remove access content permission from anonymous user.
+    # As per http://drupal.stackexchange.com/a/70478/787
+    user_role_revoke_permissions(1, array('access content'));
+    $this->drupalGet("tagadelic_taxonomy");
+    $this->assertResponse(403);
   }
 
   public function testTagsWithoutNodesNotOnPage() {
@@ -63,10 +80,24 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
   }
 
   public function testHasMaxsixtyTags() {
-    $this->createVocAndTags(100);
+    $this->createVocAndTags(61);
     $this->drupalGet("tagadelic_taxonomy");
-    $amount = count($this->xpath("//*/ul[@class='tag-cloud']/li"));
-    $this->assertEqual(60, $amount);
+    $this->assertAmountTagsOnPage(60);
+  }
+
+  public function testOrdersTagsByUsage() {
+    $this->createVocAndTags(3, FALSE);
+    $this->createNodesWithTags(3);
+
+    $this->drupalGet("tagadelic_taxonomy");
+    $tags = $this->xpath("//*/ul[@class='tag-cloud']/li/a");
+
+    $found = array();
+    foreach ($tags as $tag) {
+      $attributes = $tag->attributes();
+      $found[] = (string) $attributes["href"];
+    }
+    $this->assertEqual($found, ["/taxonomy/term/3", "/taxonomy/term/2", "/taxonomy/term/1"]);
   }
 
   public function testOnlyHasTagsFromSelectedVocabularies() {
@@ -110,6 +141,44 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
     $this->assertRaw('/tagadelic.css', "Tagadelic CSS added to styles");
   }
 
+  public function testAttachesCssOnlyToCloudPages() {
+    $this->createVocAndTags(1);
+    $this->drupalGet("node");
+    $this->assertNotRaw('/tagadelic.css', "Tagadelic CSS added to styles");
+  }
+
+  public function testBlockRendering() {
+    $this->enableBlock();
+    $this->createNodesWithTags(10);
+
+    $this->drupalGet('node');
+    $this->assertText(t("Tag Cloud"), "Title of block is Tag Cloud");
+  }
+
+  public function testBlockHasMoreLinkToPage() {
+    $this->enableBlock();
+    $this->createVocAndTags(11);
+
+    $this->drupalGet('node');
+
+    $this->assertHasXpath('//*/a[@class="more"]');
+    $this->assertLink("More tags");
+
+    # This will cause a false-positive, as we have a link to tagadelic_taxonomy in the main-menu too!
+    $this->assertLinkByHref("tagadelic_taxonomy");
+  }
+
+  public function testBlockHasMaxTwelveTags() {
+    $this->enableBlock();
+    $this->createVocAndTags(13);
+
+    $this->drupalGet('node');
+    $this->assertAmountTagsOnPage(12);
+  }
+
+  /*************************************************************************
+   *                     Test Helpers
+   *************************************************************************/
   private function createVocAndTags($amount_of_tags, $create_node = TRUE) {
     $tx_test = new TaxonomyWebTestCase();
 
@@ -149,7 +218,7 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
    *
    *
    * Fuck it, I am poking around in the database directly instead of testing
-   * and preparing all this field, entity, admin-user and whatnot. I am not 
+   * and preparing all this field, entity, admin-user and whatnot. I am not
    * interested in whether or not we can store nodes with tags, only that they
    * are there. By adding them to the database, we achieve that.
    */
@@ -183,6 +252,20 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
     return $this;
   }
 
+  private function enableBlock() {
+    theme_enable(array('seven'));
+    $region = 'content';
+    $module = 'tagadelic_taxonomy';
+    // set the block to a theme region, taken from block.test
+    $delta = db_query("SELECT delta FROM {block} WHERE module = :module AND theme = :theme", array(':module' => $module, ':theme' => 'seven'))->fetchField();
+    $edit = array();
+    $edit['blocks[' . $module . '_' . $delta . '][region]'] = $region;
+
+    $this->drupalLogin($this->admin_user);
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+    $this->drupalLogout();
+  }
+
   /**
    * assertHasXpath Asserts the existence of an xpath
    *
@@ -203,6 +286,14 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
     return $this->assertHasXpath($xpath, $message, $group);
   }
 
+  private function assertAmountTagsOnPage($expected_amount, $message = '', $group = 'Other') {
+    $amount = count($this->xpath("//*/ul[@class='tag-cloud']/li"));
+    if (!$message) {
+      $message = t("Expected $expected_amount Tags, found $amount");
+    }
+    $this->assertEqual($expected_amount, $amount, $message);
+  }
+
   private function assertTagHasWeight($name, $weight, $message = '', $group = 'Other') {
     $truthiness = FALSE;
     $class ='';
@@ -219,5 +310,13 @@ class TagadelicTaxonomyTestCase extends DrupalWebTestCase {
     }
 
     return $this->assertTrue($truthiness, $message, $group = 'Other');
+  }
+
+  // Inverse of http://api.drupal.org/api/drupal/modules!simpletest!drupal_web_test_case.php/function/DrupalWebTestCase%3A%3AassertRaw/7
+  private function assertNotRaw($raw, $message = '', $group = 'Other') {
+    if (!$message) {
+      $message = t('Raw "@raw" not found', array('@raw' => $raw));
+    }
+    return $this->assert(strpos($this->drupalGetContent(), $raw) === FALSE, $message, $group);
   }
 }

@@ -8,13 +8,11 @@ files[] = tests/tagadelic_taxonomy.test
 files[] = tests/tagadelic_taxonomy.admin.test
 files[] = tagadelic_taxonomy.module
 
-stylesheets[all][] = tagadelic.css
-
 configure = admin/config/content/tagadelic_taxonomy
 
-; Information added by drupal.org packaging script on 2013-03-28
+; Information added by drupal.org packaging script on 2013-10-18
 version = "7.x-2.x-dev"
 core = "7.x"
 project = "tagadelic"
-datestamp = "1364434766"
+datestamp = "1382133977"
 
