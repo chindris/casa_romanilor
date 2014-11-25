@@ -1,0 +1,27 @@
+.logo-img {
+  float: left;
+  position:relative;
+	left:-10px;
+}
+
+.site-name-slogan {
+  float: left;
+}
+
+.site-name {
+  margin-top: 20px;
+}
+
+.site-name a {
+  text-decoration: none;
+}
+
+.site-name,
+.site-slogan {
+  margin-bottom: 0;
+  line-height: 1em;
+}
+
+.site-slogan {
+  font-weight: normal;
+}

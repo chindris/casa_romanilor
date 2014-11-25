@@ -3,9 +3,11 @@ description = Displays links related to content.
 core = 7.x
 configure = admin/config/search/relatedlinks/configure
 
-; Information added by drupal.org packaging script on 2011-07-16
+files[] = tests/relatedlinks.test
+files[] = tests/relatedlinks.parsed.test
+; Information added by drupal.org packaging script on 2013-10-01
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "relatedlinks"
-datestamp = "1310776754"
+datestamp = "1380625442"
 
