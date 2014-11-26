@@ -369,3 +369,8 @@ body.page-node .pane-node-field-imagine {
 	border-spacing: 1px;
 	border: 1px solid;
 }
+
+.pane-content .field ol,
+.pane-content .field ul {
+	padding-left: 14px;
+}
