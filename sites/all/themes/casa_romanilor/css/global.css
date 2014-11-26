@@ -356,3 +356,16 @@ body.page-node .pane-node-field-imagine {
   float: left;
   margin-right: 20px;
 }
+
+/* Tables */
+.pane-content .field table thead,
+.pane-content .field table tfoot,
+.pane-content .field table tbody,
+.pane-content .field table th,
+.pane-content .field table td,
+.pane-content .field table tr,
+.pane-content .field table{
+	border-collapse: separate;
+	border-spacing: 1px;
+	border: 1px solid;
+}
