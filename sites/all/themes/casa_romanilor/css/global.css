@@ -358,19 +358,19 @@ body.page-node .pane-node-field-imagine {
 }
 
 /* Tables */
-.pane-content .field table thead,
-.pane-content .field table tfoot,
-.pane-content .field table tbody,
-.pane-content .field table th,
-.pane-content .field table td,
-.pane-content .field table tr,
-.pane-content .field table{
+.region .field table thead,
+.region .field table tfoot,
+.region .field table tbody,
+.region .field table th,
+.region .field table td,
+.region .field table tr,
+.region .field table{
 	border-collapse: separate;
 	border-spacing: 1px;
 	border: 1px solid;
 }
 
-.pane-content .field ol,
-.pane-content .field ul {
+.region-content .field ol,
+.region-content .field ul {
 	padding-left: 40px;
 }
