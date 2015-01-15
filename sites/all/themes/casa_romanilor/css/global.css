@@ -377,8 +377,8 @@ body.page-node .pane-node-field-imagine {
 
 #sidebar-first-toggler {
 	background: url('images/sidebar_toggle.png') no-repeat;
-	width: 32px;
-	height: 32px;
+	width: 64px;
+	height: 64px;
 }
 
 /* Some responsive (media) queries. */
