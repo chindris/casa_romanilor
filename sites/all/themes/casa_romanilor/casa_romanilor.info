@@ -5,6 +5,8 @@ engine = phptemplate
 screenshot = screenshot.png
 base theme = omega
 
+scripts[] = js/global.js
+
 ; IMPORTANT: DELETE THESE TWO LINES IN YOUR SUBTHEME
 
 ; REQUIRED CORE REGIONS

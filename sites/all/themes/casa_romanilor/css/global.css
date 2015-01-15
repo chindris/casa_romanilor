@@ -374,3 +374,24 @@ body.page-node .pane-node-field-imagine {
 .region-content .field ul {
 	padding-left: 40px;
 }
+
+#sidebar-first-toggler {
+	background: url('images/sidebar_toggle.png') no-repeat;
+	width: 32px;
+	height: 32px;
+}
+
+/* Some responsive (media) queries. */
+@media screen and (max-width: 800px) {
+	.region-sidebar-first-inner {
+		display:none;
+	}
+	#sidebar-first-toggler {
+		display: block;
+	}
+}
+@media screen and (min-width: 801px) {
+	#sidebar-first-toggler {
+		display: none;
+	}
+}
