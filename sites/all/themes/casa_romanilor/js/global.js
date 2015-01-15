@@ -9,7 +9,7 @@
   Drupal.behaviors.sidebarToggle = {
 	attach: function(context, settings) {
 	  $('#sidebar-first-toggler').once('sidebar-first-toggler').bind('click', function() {
-	    $('.region-sidebar-first-inner').slideToggle();
+	    $('#region-sidebar-first').slideToggle();
 	  });
 	}
   }
